@@ -10,6 +10,8 @@ LD35.Preloader = function () {
 
 LD35.Preloader.prototype = {
 	preload: function () {
+        this.game.load.image('player', '/assets/img/player.png');
+        this.game.load.image('block', '/assets/img/block.png');
 	},
 
 	create: function () {
