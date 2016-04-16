@@ -1,0 +1,14 @@
+{
+  "name": "LD35-dev-server",
+  "version": "0.0.0",
+  "description": "server for serving LD35 entry for development purposes",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "FelixNemis",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "express": "~4.13.4"
+  }
+}
