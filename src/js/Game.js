@@ -129,13 +129,12 @@ LD35.Game.prototype = {
             this.teleportReady = false;
             this.frame = this.frameOffset + 0;
             this.body.touching.down = false;
-            console.log(this.body.touching.down);
 
-            var targetPosition = this.position;
+            var targetPosition = this.position.clone();
             if (direction === 'up' || direction === 'down') {
-                targetPosition.y += 80 * (direction === 'down' ? 1 : -1);
+                targetPosition.y += 90 * (direction === 'down' ? 1 : -1);
             } else if (direction === 'left' || direction === 'right') {
-                targetPosition.x += 60 * (direction === 'right' ? 1 : -1);
+                targetPosition.x += 89 * (direction === 'right' ? 1 : -1);
             } else {
                 console.log('bad direction');
                 console.log(direction);
@@ -145,6 +144,7 @@ LD35.Game.prototype = {
                 console.log('cant teleport');
                 return;
             }
+            console.log('porting');
             this.teleported = true;
             this.body.enable = false;
             /*
@@ -171,9 +171,10 @@ LD35.Game.prototype = {
         var gameRef = this;
         this.player.teleportCheck = function (position) {
             var blocked = false;
+            console.log(position);
             gameRef.staticBlocks.forEach(function (block) {
-                var bounds = new Phaser.Rectangle(block.left, block.right, block.width, block.height);
-                blocked = bounds.contains(position.x, position.y);
+                var bounds = new Phaser.Rectangle(block.left, block.top, block.width, block.height);
+                blocked = blocked || bounds.contains(position.x, position.y);
             });
             return !blocked;
         };
@@ -420,6 +421,7 @@ LD35.Game.prototype = {
             }
             if (this.player.teleported) {
                 this.player.teleported = false;
+                this.player.body.velocity.setTo(0, 0);
                 //console.log(this.player.body.touching.down);
             }
 
@@ -455,6 +457,9 @@ LD35.Game.prototype = {
                 }
                 if (this.player.form === 'triangle') {
                     targetVelocity *= 0.75;
+                }
+                if (this.player.form === 'teleporter') {
+                    targetVelocity = 4;
                 }
                 if (this.player.body.velocity.x * sign < targetVelocity) {
                     this.player.body.velocity.x += (targetVelocity * sign)/3;

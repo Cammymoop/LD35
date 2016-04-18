@@ -821,7 +821,7 @@
                  "y":860
                 }, 
                 {
-                 "height":30,
+                 "height":25,
                  "id":76,
                  "name":"staticBlock",
                  "properties":
@@ -833,10 +833,10 @@
                  "visible":true,
                  "width":205,
                  "x":155,
-                 "y":640
+                 "y":645
                 }, 
                 {
-                 "height":30,
+                 "height":25,
                  "id":77,
                  "name":"staticBlock",
                  "properties":
@@ -848,7 +848,7 @@
                  "visible":true,
                  "width":70,
                  "x":290,
-                 "y":550
+                 "y":575
                 }, 
                 {
                  "height":30,
@@ -878,7 +878,7 @@
                  "visible":true,
                  "width":50,
                  "x":45,
-                 "y":285
+                 "y":265
                 }, 
                 {
                  "height":25,
@@ -893,7 +893,7 @@
                  "visible":true,
                  "width":45,
                  "x":200,
-                 "y":730
+                 "y":715
                 }, 
                 {
                  "height":50,
@@ -1061,51 +1061,6 @@
                  "width":80,
                  "x":1350,
                  "y":715
-                }, 
-                {
-                 "height":25,
-                 "id":92,
-                 "name":"pickup",
-                 "properties":
-                    {
-
-                    },
-                 "rotation":0,
-                 "type":"circle",
-                 "visible":true,
-                 "width":25,
-                 "x":1185,
-                 "y":215
-                }, 
-                {
-                 "height":25,
-                 "id":94,
-                 "name":"pickup",
-                 "properties":
-                    {
-
-                    },
-                 "rotation":0,
-                 "type":"triangle",
-                 "visible":true,
-                 "width":25,
-                 "x":1145,
-                 "y":200
-                }, 
-                {
-                 "height":20,
-                 "id":95,
-                 "name":"pickup",
-                 "properties":
-                    {
-
-                    },
-                 "rotation":0,
-                 "type":"parachute",
-                 "visible":true,
-                 "width":15,
-                 "x":1055,
-                 "y":210
                 }],
          "opacity":1,
          "type":"objectgroup",
