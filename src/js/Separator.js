@@ -60,10 +60,6 @@ LD35.Separator.prototype = {
                 overlap = 0;
             } else {
                 dynBody.touching.none = false;
-                if (axis === 'y' && dynBody.debugMe) {
-                    console.log('touchdown ' + dynBody.position.x + ':' + dynBody.position.y);
-                    dynBody.debugMe = false;
-                }
                 dynBody.touching[map[axis].greater] = true;
                 staticBody.touching.none = false;
                 staticBody.touching[map[axis].lesser] = true;

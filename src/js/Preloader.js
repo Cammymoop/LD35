@@ -18,6 +18,9 @@ LD35.Preloader.prototype = {
         this.game.load.image('circle', '/assets/img/circle.png');
         this.game.load.image('triangle', '/assets/img/triangle.png');
 
+        this.game.load.image('end', '/assets/img/end.png');
+        this.game.load.image('white', '/assets/img/white.png');
+
         this.game.load.image('bg-tiles', '/assets/img/bg_tiles.png');
         this.game.load.tilemap('bg-map', '/assets/map/bg.json', null, Phaser.Tilemap.TILED_JSON);
 

@@ -77,14 +77,12 @@ LD35.Game.prototype = {
             if (++curIndex >= this.availableForms.length) {
                 curIndex = 0;
             }
-            console.log('cycling forms: ' + curIndex);
             this.changeForm(this.availableForms[curIndex]);
         };
         this.player.changeForm = function (form) {
             if (form === this.form || this.availableForms.indexOf(form) < 0 || this.isAParachute) {
                 return;
             }
-            console.log('changing forms');
             this.form = form;
             this.frameOffset = (form === 'normal' ? 0 : (form === 'teleporter' ? 2 : 4));
             this.frame = this.frameOffset;
@@ -136,15 +134,12 @@ LD35.Game.prototype = {
             } else if (direction === 'left' || direction === 'right') {
                 targetPosition.x += 89 * (direction === 'right' ? 1 : -1);
             } else {
-                console.log('bad direction');
                 console.log(direction);
                 return;
             }
             if (!this.teleportCheck(targetPosition)) {
-                console.log('cant teleport');
                 return;
             }
-            console.log('porting');
             this.teleported = true;
             this.body.enable = false;
             /*
@@ -157,7 +152,6 @@ LD35.Game.prototype = {
             //this.body.y = targetPosition.y;
             //this.body.position = targetPosition; 
             //this.body.prev = targetPosition; 
-            //this.body.debugMe = true;
 
             this.body.enable = true;
             //gameRef.physics.enable(this);
@@ -165,13 +159,11 @@ LD35.Game.prototype = {
             //console.log(this.position.y);
             //console.log(this.body.position);
             //console.log(this.body.prev);
-            //this.body.debugMe = true;
             this.body.velocity.setTo(0, 0);
         };
         var gameRef = this;
         this.player.teleportCheck = function (position) {
             var blocked = false;
-            console.log(position);
             gameRef.staticBlocks.forEach(function (block) {
                 var bounds = new Phaser.Rectangle(block.left, block.top, block.width, block.height);
                 blocked = blocked || bounds.contains(position.x, position.y);
@@ -333,6 +325,13 @@ LD35.Game.prototype = {
             pickup.body.allowGravity = false;
         }, this);
 
+        this.end = this.game.add.group();
+        this.mapObjects.filter(function (obj) { return obj.name === "end"; }).forEach(function (obj) {
+            var endSprite = this.end.create(obj.x, obj.y, 'end');
+            this.physics.enable(endSprite);
+            endSprite.body.allowGravity = false;
+        }, this);
+
         this.controls = {
             up:     this.game.input.keyboard.addKey(Phaser.Keyboard.UP),
             left:   this.game.input.keyboard.addKey(Phaser.Keyboard.LEFT),
@@ -408,6 +407,7 @@ LD35.Game.prototype = {
             //this.physics.collide(this.player, this.staticBlocks);
             this.physics.overlap(this.player, this.staticBlocks, null, this.separator.specialSeparate, this.separator);
             this.physics.overlap(this.player, this.pickups, this.touchedPickup, null, this);
+            this.physics.overlap(this.player, this.end, this.touchedEnd, null, this);
 
             var playerBounds = this.player.getPlayerBounds();
             this.deathZones.forEach(function (deathZone) {
@@ -529,9 +529,6 @@ LD35.Game.prototype = {
         block.deltaScale = new Phaser.Point(deltaScaleX, deltaScaleY); 
 
         block.update = function () {
-            //if (this.topBody.debugBody) {
-            //    this.topBody.debugBody.updateSpriteTransform();
-            //}
             if (this.tweening) {
                 return;
             }
@@ -548,7 +545,6 @@ LD35.Game.prototype = {
     },
 
     touchedPickup: function (player, pickup) {
-        console.log(pickup.type);
         if (pickup.type === 'parachute') {
             player.canParachute = true;
         }
@@ -565,8 +561,30 @@ LD35.Game.prototype = {
         pickup.kill();
     },
 
+    touchedEnd: function () {
+        this.beatGame();
+    },
+
     render: function () {
-        this.game.debug.text('fps: ' + this.game.time.fps, 10, 20, '#FF0000');
+        //this.game.debug.text('fps: ' + this.game.time.fps, 10, 20, '#FF0000');
+    },
+
+    beatGame: function () {
+        this.player.alive = false;
+        this.player.body.allowGravity = false;
+        this.player.body.velocity.setTo(0, 0);
+        if (this.player.tween) {
+            this.player.tween.stop();
+        }
+        var white = this.game.add.sprite(0, 0, 'white');
+        white.width = this.game.width;
+        white.height = this.game.height;
+        white.alpha = 0;
+        white.fixedToCamera = true;
+        var tween = this.game.tweens.create(white).to({alpha: 1}, 1520);
+        tween.start();
+
+        //this.sfx.death.play();
     },
 
     playerDeath: function () {
