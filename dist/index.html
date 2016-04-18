@@ -22,6 +22,22 @@
                 window.gameInstance.state.add('Boot', LD35.Boot);
                 window.gameInstance.state.start('Boot');
             };
+
+            function toggleControls () {
+                var controls = document.getElementById("showMe");
+                if (controls.style.display !== "none") {
+                    controls.style.display = "none";
+                    document.getElementById("toggleControls").innerHTML = "Show Controls";
+                } else {
+                    controls.style.display = "block";
+                    document.getElementById("toggleControls").innerHTML = "Hide Controls";
+                }
+            }
         </script>
+
+        <div>
+            <a id="toggleControls" href="#" onclick="toggleControls();">Show Controls:</a>
+            <div id="showMe" style="display:none;">Left, Right: move<br>Space: jump<br>Down: cancel parachute<br>Z: change shape (once you have more than one)<br>R: reset<br>Y: disable particles (helps with framerate)</div>
+        </div>
     </body>
 </html>
