@@ -4,6 +4,8 @@
 var LD35 = scope.LD35;
 var Phaser = scope.Phaser;
 
+LD35.particlesEnabled = true;
+
 LD35.Game = function () {
 };
 
@@ -304,7 +306,6 @@ LD35.Game.prototype = {
             this.emitters.push(emitterParent);
             this.deathZones.push(deathZone);
         }, this);
-        this.particlesEnabled = true;
 
         this.mapObjects.filter(function (obj) { return obj.name === "kill"; }).forEach(function (obj) {
             var g = this.game.add.graphics(obj.x, obj.y);
@@ -384,7 +385,7 @@ LD35.Game.prototype = {
         }
         this.frameCount++;
 
-        if (this.frameCount % 20 === 0 && this.particlesEnabled) {
+        if (this.frameCount % 20 === 0 && LD35.particlesEnabled) {
             this.emitters.forEach(function (emitter) {
                 if (!emitter.isOn()) {
                     if (emitter.zone.intersects(this.game.camera.view)) {
@@ -609,11 +610,11 @@ LD35.Game.prototype = {
     },
 
     toggleParticles: function () {
-        if (!this.particlesEnabled) {
-            this.particlesEnabled = true;
+        if (!LD35.particlesEnabled) {
+            LD35.particlesEnabled = true;
             return;
         }
-        this.particlesEnabled = false;
+        LD35.particlesEnabled = false;
         this.emitters.forEach(function (emitter) {
             emitter.turnOff();
         });
