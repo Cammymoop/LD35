@@ -67,15 +67,126 @@ LD35.Game.prototype = {
         this.player.isAParachute = false;
         this.player.canParachute = false;
         this.player.jumpPushed = false;
+
+        this.player.form = 'normal';
+        this.player.availableForms = ['normal'];
+        this.player.frameOffset = 0;
+        this.player.teleportReady = false;
+        this.player.cycleForm = function () {
+            var curIndex = this.availableForms.indexOf(this.form);
+            if (++curIndex >= this.availableForms.length) {
+                curIndex = 0;
+            }
+            console.log('cycling forms: ' + curIndex);
+            this.changeForm(this.availableForms[curIndex]);
+        };
+        this.player.changeForm = function (form) {
+            if (form === this.form || this.availableForms.indexOf(form) < 0 || this.isAParachute) {
+                return;
+            }
+            console.log('changing forms');
+            this.form = form;
+            this.frameOffset = (form === 'normal' ? 0 : (form === 'teleporter' ? 2 : 4));
+            this.frame = this.frameOffset;
+            this.teleportReady = false;
+        };
+
+        this.player.teleported = false;
+        this.player.jump = function (controls) {
+            if (this.form === 'normal' || this.form === 'triangle') {
+                this.body.velocity.y = -340;
+                if (this.form === 'triangle') {
+                    this.body.velocity.y *= 1.6;
+                }
+                if (this.isAParachute) {
+                    this.stopBeingAParachute();
+                }
+                this.jumpPushed = true;
+                this.body.touching.down = false;
+                this.jumpSound.play();
+                return;
+            }
+            if (!this.teleportReady) {
+                this.frame = this.frameOffset + 1;
+                this.body.velocity.x = 0;
+                controls.up.onDown.addOnce(this.teleport, this, null, 'up');
+                controls.down.onDown.addOnce(this.teleport, this, null, 'down');
+                controls.left.onDown.addOnce(this.teleport, this, null, 'left');
+                controls.right.onDown.addOnce(this.teleport, this, null, 'right');
+                this.teleportReady = true;
+            }
+        };
+        this.player.jumpRelease = function () {
+            if (this.form === 'teleporter') {
+                this.frame = this.frameOffset + 0;
+                this.teleportReady = false;
+            }
+        };
+        this.player.teleport = function (key, direction) {
+            if (!this.teleportReady) {
+                return;
+            }
+            this.teleportReady = false;
+            this.frame = this.frameOffset + 0;
+            this.body.touching.down = false;
+            console.log(this.body.touching.down);
+
+            var targetPosition = this.position;
+            if (direction === 'up' || direction === 'down') {
+                targetPosition.y += 80 * (direction === 'down' ? 1 : -1);
+            } else if (direction === 'left' || direction === 'right') {
+                targetPosition.x += 60 * (direction === 'right' ? 1 : -1);
+            } else {
+                console.log('bad direction');
+                console.log(direction);
+                return;
+            }
+            if (!this.teleportCheck(targetPosition)) {
+                console.log('cant teleport');
+                return;
+            }
+            this.teleported = true;
+            this.body.enable = false;
+            /*
+            this.body.destroy();
+            this.body = null;
+            */
+
+            this.position = targetPosition;
+            //this.body.x = targetPosition.x;
+            //this.body.y = targetPosition.y;
+            //this.body.position = targetPosition; 
+            //this.body.prev = targetPosition; 
+            //this.body.debugMe = true;
+
+            this.body.enable = true;
+            //gameRef.physics.enable(this);
+            //this.initBody();
+            //console.log(this.position.y);
+            //console.log(this.body.position);
+            //console.log(this.body.prev);
+            //this.body.debugMe = true;
+            this.body.velocity.setTo(0, 0);
+        };
+        var gameRef = this;
+        this.player.teleportCheck = function (position) {
+            var blocked = false;
+            gameRef.staticBlocks.forEach(function (block) {
+                var bounds = new Phaser.Rectangle(block.left, block.right, block.width, block.height);
+                blocked = bounds.contains(position.x, position.y);
+            });
+            return !blocked;
+        };
+
         this.player.getPlayerBounds = function () {
             return new Phaser.Rectangle(this.x, this.y, this.width, this.height);
         };
         this.player.beAParachute = function () {
-            if (!this.canParachute) {
+            if (!this.canParachute || this.form === 'teleporter') {
                 return;
             }
             this.isAParachute = true;
-            this.frame = 1;
+            this.frame = this.frameOffset + 1;
             this.body.velocity.y = 0;
             this.body.gravity.setTo(0, -400);
             this.body.maxVelocity.y = 600;
@@ -94,15 +205,20 @@ LD35.Game.prototype = {
 
             this.jumpPushed = false;
             this.isAParachute = false;
-            this.frame = 0;
+            this.frame = this.frameOffset + 0;
             this.body.gravity.setTo(0, 0);
             this.body.maxVelocity.y = 5000;
         };
         this.player.anchor.setTo(0.5, 0.5);
 
+        this.player.initBody = function () {
+            this.body.maxVelocity.y = 5000;
+            this.body.drag.setTo(2000, 0);
+        };
         this.physics.enable(this.player);
-        this.player.body.maxVelocity.y = 5000;
-        this.player.body.drag.setTo(2000, 0);
+        this.player.initBody();
+        //this.player.body.maxVelocity.y = 5000;
+        //this.player.body.drag.setTo(2000, 0);
 
 
         this.blockZones = this.game.add.group();
@@ -184,12 +300,18 @@ LD35.Game.prototype = {
                     emitter.on = false;
                 });
             };
+            emitterParent.isOn = function () {
+                this.children.forEach(function (emitter) {
+                    emitter.on = false;
+                });
+            };
 
             var deathZone = new Phaser.Rectangle(obj.x, obj.y, obj.width, obj.height);
             emitterParent.zone = deathZone;
             this.emitters.push(emitterParent);
             this.deathZones.push(deathZone);
         }, this);
+        this.particlesEnabled = true;
 
         this.mapObjects.filter(function (obj) { return obj.name === "kill"; }).forEach(function (obj) {
             var g = this.game.add.graphics(obj.x, obj.y);
@@ -211,13 +333,16 @@ LD35.Game.prototype = {
         }, this);
 
         this.controls = {
-            up:    this.game.input.keyboard.addKey(Phaser.Keyboard.UP),
-            left:  this.game.input.keyboard.addKey(Phaser.Keyboard.LEFT),
-            right: this.game.input.keyboard.addKey(Phaser.Keyboard.RIGHT),
-            down:  this.game.input.keyboard.addKey(Phaser.Keyboard.DOWN),
-            jump:  this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR),
+            up:     this.game.input.keyboard.addKey(Phaser.Keyboard.UP),
+            left:   this.game.input.keyboard.addKey(Phaser.Keyboard.LEFT),
+            right:  this.game.input.keyboard.addKey(Phaser.Keyboard.RIGHT),
+            down:   this.game.input.keyboard.addKey(Phaser.Keyboard.DOWN),
+            jump:   this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR),
+            change: this.game.input.keyboard.addKey(Phaser.Keyboard.Z),
+
             reset: this.game.input.keyboard.addKey(Phaser.Keyboard.R),
             pause: this.game.input.keyboard.addKey(Phaser.Keyboard.P),
+            disableParticles: this.game.input.keyboard.addKey(Phaser.Keyboard.Y),
         };
 
         this.sfx = {};
@@ -236,9 +361,14 @@ LD35.Game.prototype = {
         this.sfx.para = this.game.add.audio('para');
 
         this.player.paraSound = this.sfx.para;
+        this.player.jumpSound = this.sfx.jump;
 
         this.controls.reset.onDown.add(function () {this.resetGame();}, this);
         this.controls.pause.onDown.add(function () {this.togglePause();}, this);
+        this.controls.disableParticles.onDown.add(function () {this.toggleParticles();}, this);
+
+        this.controls.change.onDown.add(function () {this.player.cycleForm();}, this);
+        this.controls.jump.onUp.add(function () {this.player.jumpRelease();}, this);
 
         this.gamePaused = false;
 
@@ -254,9 +384,9 @@ LD35.Game.prototype = {
         }
         this.frameCount++;
 
-        if (this.frameCount % 20 === 0) {
+        if (this.frameCount % 20 === 0 && this.particlesEnabled) {
             this.emitters.forEach(function (emitter) {
-                if (!emitter.on) {
+                if (!emitter.isOn()) {
                     if (emitter.zone.intersects(this.game.camera.view)) {
                         emitter.turnOn();
                     }
@@ -285,14 +415,12 @@ LD35.Game.prototype = {
                 }
             }, this);
 
-            if (this.controls.jump.isDown && this.player.body.touching.down) {
-                this.player.body.velocity.y = -340;
-                if (this.player.isAParachute) {
-                    this.player.stopBeingAParachute();
-                }
-                this.player.jumpPushed = true;
-                this.player.body.touching.down = false;
-                this.sfx.jump.play();
+            if (!this.player.teleported && this.controls.jump.isDown && this.player.body.touching.down) {
+                this.player.jump(this.controls);
+            }
+            if (this.player.teleported) {
+                this.player.teleported = false;
+                //console.log(this.player.body.touching.down);
             }
 
             if (this.player.body.touching.down) {
@@ -324,6 +452,9 @@ LD35.Game.prototype = {
                     targetVelocity = 300;
                 } else if (this.player.isAParachute) {
                     targetVelocity = 200;
+                }
+                if (this.player.form === 'triangle') {
+                    targetVelocity *= 0.75;
                 }
                 if (this.player.body.velocity.x * sign < targetVelocity) {
                     this.player.body.velocity.x += (targetVelocity * sign)/3;
@@ -416,6 +547,16 @@ LD35.Game.prototype = {
         if (pickup.type === 'parachute') {
             player.canParachute = true;
         }
+        if (pickup.type === 'circle') {
+            player.canTeleport = true;
+            player.availableForms.push('teleporter');
+            player.changeForm('teleporter');
+        }
+        if (pickup.type === 'triangle') {
+            player.canTriangle = true;
+            player.availableForms.push('triangle');
+            player.changeForm('triangle');
+        }
         pickup.kill();
     },
 
@@ -442,6 +583,17 @@ LD35.Game.prototype = {
         tween.start();
 
         this.sfx.death.play();
+    },
+
+    toggleParticles: function () {
+        if (!this.particlesEnabled) {
+            this.particlesEnabled = true;
+            return;
+        }
+        this.particlesEnabled = false;
+        this.emitters.forEach(function (emitter) {
+            emitter.turnOff();
+        });
     },
 
     resetGame: function () {
