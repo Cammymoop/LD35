@@ -82,7 +82,11 @@ LD35.Game.prototype = {
             this.changeForm(this.availableForms[curIndex]);
         };
         this.player.changeForm = function (form) {
-            if (form === this.form || this.availableForms.indexOf(form) < 0 || this.isAParachute) {
+            if (form === this.form || this.availableForms.indexOf(form) < 0) {
+                return;
+            }
+            if (this.isAParachute) {
+                this.onUnParachute.addOnce(function () {this.changeForm(form);}, this);
                 return;
             }
             this.form = form;
@@ -203,7 +207,10 @@ LD35.Game.prototype = {
             this.frame = this.frameOffset + 0;
             this.body.gravity.setTo(0, 0);
             this.body.maxVelocity.y = 5000;
+
+            this.onUnParachute.dispatch();
         };
+        this.player.onUnParachute = new Phaser.Signal();
         this.player.anchor.setTo(0.5, 0.5);
 
         this.player.initBody = function () {
