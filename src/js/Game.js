@@ -353,7 +353,8 @@ LD35.Game.prototype = {
 
         this.pickups = this.game.add.group();
         this.mapObjects.filter(function (obj) { return obj.name === "pickup"; }).forEach(function (obj) {
-            if (LD35.completedCheckpoints >= 1 && obj.type === "parachute" || obj.type === 'circle') {
+            if (LD35.completedCheckpoints >= 1 && (obj.type === "parachute" || obj.type === 'circle')) {
+                console.log('no ' + obj.type);
                 return;
             }
             if (LD35.completedCheckpoints >= 2 && obj.type === "triangle") {
