@@ -5,6 +5,7 @@ var LD35 = scope.LD35;
 var Phaser = scope.Phaser;
 
 LD35.particlesEnabled = true;
+LD35.completedCheckpoints = 0;
 
 LD35.Game = function () {
 };
@@ -72,6 +73,14 @@ LD35.Game.prototype = {
 
         this.player.form = 'normal';
         this.player.availableForms = ['normal'];
+        if (LD35.completedCheckpoints >= 1) {
+            this.player.availableForms.push('teleporter');
+            this.player.canParachute = true;
+        }
+        if (LD35.completedCheckpoints >= 2) {
+            this.player.availableForms.push('triangle');
+        }
+
         this.player.frameOffset = 0;
         this.player.teleportReady = false;
         this.player.cycleForm = function () {
@@ -217,8 +226,6 @@ LD35.Game.prototype = {
             this.body.maxVelocity.y = 5000;
             this.body.drag.setTo(2000, 0);
         };
-        this.physics.enable(this.player);
-        this.player.initBody();
         //this.player.body.maxVelocity.y = 5000;
         //this.player.body.drag.setTo(2000, 0);
 
@@ -321,8 +328,37 @@ LD35.Game.prototype = {
             this.deathZones.push(new Phaser.Rectangle(obj.x, obj.y, obj.width, obj.height));
         }, this);
 
+        this.activatedCheckpoints = [];
+        this.checkpoints = [];
+        this.mapObjects.filter(function (obj) { return obj.name === "checkpoint"; }).forEach(function (obj) {
+            var checkpoint = new Phaser.Rectangle(obj.x, obj.y, obj.width, obj.height);
+            checkpoint.number = Math.round(obj.properties.number);
+            if (LD35.completedCheckpoints >= checkpoint.number) {
+                this.activatedCheckpoints.push(checkpoint);
+                return;
+            }
+            this.checkpoints.push(checkpoint);
+        }, this);
+
+        this.activatedCheckpoints.forEach(function (checkpoint) {
+            if (checkpoint.number === LD35.completedCheckpoints) {
+                this.player.position.setTo(checkpoint.centerX, checkpoint.centerY);
+            }
+        }, this);
+
+        //Enable physics after placing the player at a checkpoint
+        this.physics.enable(this.player);
+        this.player.initBody();
+        
+
         this.pickups = this.game.add.group();
         this.mapObjects.filter(function (obj) { return obj.name === "pickup"; }).forEach(function (obj) {
+            if (LD35.completedCheckpoints >= 1 && obj.type === "parachute" || obj.type === 'circle') {
+                return;
+            }
+            if (LD35.completedCheckpoints >= 2 && obj.type === "triangle") {
+                return;
+            }
             var pickup = this.pickups.create(obj.x, obj.y, obj.type);
             pickup.x -= pickup.width/2;
             pickup.y -= pickup.height/2;
@@ -371,7 +407,22 @@ LD35.Game.prototype = {
         this.player.paraSound = this.sfx.para;
         this.player.jumpSound = this.sfx.jump;
 
-        this.controls.reset.onDown.add(function () {this.resetGame();}, this);
+        this.resetPushedTime = 0;
+        this.controls.reset.onDown.add(function () {
+            this.resetPushedTime = this.game.time.now;
+        }, this);
+        this.controls.reset.onUp.add(function () {
+            this.resetGame();
+        }, this);
+        this.controls.reset.onHoldCallback = function () {
+            if (this.game.time.now - this.resetPushedTime > 1000) {
+                this.controls.reset.onUp.dispatch();
+            }
+        };
+        this.controls.reset.onHoldContext = this;
+
+        this.firstFrame = true;
+
         this.controls.pause.onDown.add(function () {this.togglePause();}, this);
         this.controls.disableParticles.onDown.add(function () {this.toggleParticles();}, this);
 
@@ -421,6 +472,14 @@ LD35.Game.prototype = {
             this.deathZones.forEach(function (deathZone) {
                 if (deathZone.intersects(playerBounds)) {
                     this.playerDeath();
+                }
+            }, this);
+
+            this.checkpoints.forEach(function (checkpoint, index) {
+                if (checkpoint.intersects(playerBounds)) {
+                    console.log('overlapping checkpoint');
+                    LD35.completedCheckpoints = checkpoint.number;
+                    this.checkpoints.splice(index, 1); // remove the completed checkpoint
                 }
             }, this);
 
@@ -494,7 +553,6 @@ LD35.Game.prototype = {
             var randSign = Math.random() > 0.5 ? -1 : 1;
             this.addBlock('block', zone, randX, randY, randScaleX, randScaleY, (randomDeltaX * randSign), (randomDeltaY * randSign * -1));
         }, this);
-        //this.physics.setBoundsToWorld();
 	},
 
     randomBetween: function (min, max) {
